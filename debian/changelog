@@ -1,8 +1,268 @@
-rocksdb (7.2.2-3) UNRELEASED; urgency=medium
+rocksdb (9.10.0-1) unstable; urgency=medium
 
-  * update
+  * New upstream release 9.10.0, see details at
+    - https://github.com/facebook/rocksdb/releases/tag/v9.10.0
+    - https://github.com/facebook/rocksdb/releases/tag/v9.9.3
+  * Main change between 9.8.4 and 9.10.0 seemingly is changes to how they do
+    auto-triggered compaction of databases, including follow-up to a memory leak
+    (https://github.com/facebook/rocksdb/pull/13106) which most likely fixes
+    issue seen in Oxigraph (Closes: #1088523).
+  * Bump library name to librocksdb9.10 so it matches latest RocksDB version.
 
- -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Thu, 16 Jun 2022 14:07:03 +0800
+ -- Otto Kekäläinen <otto@debian.org>  Fri, 24 Jan 2025 21:24:20 -0800
+
+rocksdb (9.8.4-1) unstable; urgency=medium
+
+  * New upstream release 9.8.4 with plenty of changes, see
+    - https://github.com/facebook/rocksdb/releases/tag/v9.8.4
+    - https://github.com/facebook/rocksdb/releases/tag/v9.7.4
+    - https://github.com/facebook/rocksdb/releases/tag/v9.6.1
+    - https://github.com/facebook/rocksdb/releases/tag/v9.5.2
+    - https://github.com/facebook/rocksdb/releases/tag/v9.4.0
+  * Extend gbp.conf and write a README.source.md about package maintenance
+    (Closes: #1070099)
+  * Add myself as uploader and co-maintainer
+  * Add upstream/metadata file
+  * Library transition from librocksdb9.2 to librocksdb9.8
+
+ -- Otto Kekäläinen <otto@debian.org>  Wed, 11 Dec 2024 22:40:21 -0800
+
+rocksdb (9.3.1-1) unstable; urgency=medium
+
+  * New major upstream release.
+  * Library transition from librocksdb9.2 to librocksdb9.3.
+
+ -- Otto Kekäläinen <otto@debian.org>  Mon, 01 Jul 2024 16:27:03 -0700
+
+rocksdb (9.2.1-3) unstable; urgency=medium
+
+  [ wuruilong <wuruilong@loongson.cn> ]
+  * Fix compilation options for loong64 architecture (closes: #1072547).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 08 Jun 2024 21:20:56 +0000
+
+rocksdb (9.2.1-2) unstable; urgency=medium
+
+  * Upload to Sid.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 02 Jun 2024 21:34:43 +0200
+
+rocksdb (9.2.1-1) experimental; urgency=medium
+
+  * New major upstream release.
+  * Library transition from librocksdb9.1 to librocksdb9.2 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Fri, 31 May 2024 17:32:44 +0200
+
+rocksdb (9.1.1-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Update Standards-Version to 4.7.0 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Wed, 24 Apr 2024 18:03:57 +0200
+
+rocksdb (9.1.0-1) experimental; urgency=medium
+
+  * New major upstream release.
+  * Library transition from librocksdb9.0 to librocksdb9.1 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 20 Apr 2024 09:25:47 +0200
+
+rocksdb (9.0.0-1) experimental; urgency=medium
+
+  * New major upstream release.
+  * Library transition from librocksdb8.11 to librocksdb9.0 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Mon, 25 Mar 2024 18:21:02 +0100
+
+rocksdb (8.11.3-1) experimental; urgency=medium
+
+  * New major upstream release.
+  * Library transition from librocksdb8.10 to librocksdb8.11 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 05 Mar 2024 17:17:47 +0100
+
+rocksdb (8.10.2-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 27 Feb 2024 17:58:06 +0100
+
+rocksdb (8.10.0-1) experimental; urgency=medium
+
+  * New major upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 14 Jan 2024 20:56:41 +0100
+
+rocksdb (8.9.1-2) unstable; urgency=medium
+
+  * Upload to Sid.
+  * Add loong64 architecture support (closes: #1059023).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Thu, 21 Dec 2023 13:29:05 +0100
+
+rocksdb (8.9.1-1) experimental; urgency=medium
+
+  * New major upstream release.
+  * Library transition from librocksdb8.8 to librocksdb8.9 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 17 Dec 2023 09:03:33 +0100
+
+rocksdb (8.8.1-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Library transition from librocksdb8.6 to librocksdb8.8 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 02 Dec 2023 21:37:21 +0100
+
+rocksdb (8.6.7-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Library transition from librocksdb8.5 to librocksdb8.6 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Fri, 13 Oct 2023 20:32:29 +0200
+
+rocksdb (8.5.4-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Use no for Rules-Requires-Root.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 01 Oct 2023 09:06:53 +0200
+
+rocksdb (8.5.3-2) unstable; urgency=medium
+
+  * Upload to Sid.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Thu, 07 Sep 2023 08:13:04 +0000
+
+rocksdb (8.5.3-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Tue, 05 Sep 2023 10:20:28 +0000
+
+rocksdb (8.3.2-2) unstable; urgency=medium
+
+  * Upload to Sid.
+  * Builds with GCC-13 (closes: #1037844).
+  * Remove Sparc64 from supported architectures.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 09 Jul 2023 18:54:42 +0200
+
+rocksdb (8.3.2-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Library transition from librocksdb8.1 to librocksdb8.3 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Wed, 05 Jul 2023 23:42:35 +0200
+
+rocksdb (8.1.1-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Update patches.
+  * Library transition from librocksdb7.8 to librocksdb8.1 .
+  * Update Standards-Version to 4.6.2 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Mon, 12 Jun 2023 06:56:30 +0200
+
+rocksdb (7.8.3-2) unstable; urgency=medium
+
+  * Upload to Sid.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 07 Jan 2023 13:33:41 +0100
+
+rocksdb (7.8.3-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Library transition from librocksdb7.7 to librocksdb7.8 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 25 Dec 2022 12:44:21 +0100
+
+rocksdb (7.7.8-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 24 Dec 2022 22:30:22 +0100
+
+rocksdb (7.7.3-2) unstable; urgency=medium
+
+  * Upload to Sid.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 13 Nov 2022 14:20:55 +0100
+
+rocksdb (7.7.3-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sat, 15 Oct 2022 17:36:43 +0200
+
+rocksdb (7.7.2-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Library transition from librocksdb7.6 to librocksdb7.7 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 09 Oct 2022 10:38:48 +0200
+
+rocksdb (7.6.0-2) unstable; urgency=medium
+
+  * Upload to Sid.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Wed, 28 Sep 2022 19:04:48 +0200
+
+rocksdb (7.6.0-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Library transition from librocksdb7.5 to librocksdb7.6 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Fri, 23 Sep 2022 14:48:51 +0200
+
+rocksdb (7.5.3-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Library transition from librocksdb7.4 to librocksdb7.5 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Fri, 26 Aug 2022 18:30:20 +0200
+
+rocksdb (7.4.5-1) experimental; urgency=medium
+
+  * New upstream release.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Thu, 04 Aug 2022 16:42:18 +0200
+
+rocksdb (7.4.4-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Library transition from librocksdb7.3 to librocksdb7.4 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Mon, 01 Aug 2022 19:30:29 +0200
+
+rocksdb (7.3.1-2) unstable; urgency=medium
+
+  * Upload to Sid.
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 31 Jul 2022 12:44:49 +0200
+
+rocksdb (7.3.1-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Update patches.
+  * Library transition from librocksdb7.2 to librocksdb7.3 .
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Sun, 19 Jun 2022 15:39:09 +0200
+
+rocksdb (7.2.2-5) unstable; urgency=medium
+
+  * Build with LZ4 support (closes: #1012629, #1012804).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Thu, 16 Jun 2022 18:29:56 +0200
+
+rocksdb (7.2.2-4) unstable; urgency=medium
+
+  [ Frédéric Bonnard <frediz@debian.org> ]
+  * Don't optimize without knowing the target system on Power
+    (closes: #1012638).
+
+ -- Laszlo Boszormenyi (GCS) <gcs@debian.org>  Mon, 13 Jun 2022 20:45:01 +0200
 
 rocksdb (7.2.2-3) unstable; urgency=medium
 

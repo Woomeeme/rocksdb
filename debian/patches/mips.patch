@@ -1,13 +1,22 @@
+From: "Laszlo Boszormenyi (GCS)" <gcs@debian.org>
+Date: Sun, 24 Nov 2024 23:29:28 -0800
+Subject: mips
+
 implement timer implementation for mips platform
 
 Signed-off-by: Khem Raj <raj.khem@gmail.com>
+---
+ .../transactions/lock/range/range_tree/lib/portability/toku_time.h  | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/utilities/transactions/lock/range/range_tree/lib/portability/toku_time.h b/utilities/transactions/lock/range/range_tree/lib/portability/toku_time.h
+index fa8dbea..77d55d4 100644
 --- a/utilities/transactions/lock/range/range_tree/lib/portability/toku_time.h
 +++ b/utilities/transactions/lock/range/range_tree/lib/portability/toku_time.h
-@@ -159,7 +159,12 @@ static inline tokutime_t toku_time_now(v
-   __asm __volatile__("rdcycle %0" : "=r"(result));
+@@ -166,6 +166,12 @@ static inline tokutime_t toku_time_now(void) {
+   unsigned long result;
+   asm volatile ("rdtime.d\t%0,$r0" : "=r" (result));
    return result;
- #endif
--
 +#elif defined(__mips__)
 +  // mips apparently only allows rdtsc for superusers, so we fall
 +  // back to gettimeofday.  It's possible clock_gettime would be better.

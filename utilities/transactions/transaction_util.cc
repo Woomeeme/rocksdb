@@ -3,7 +3,6 @@
 //  COPYING file in the root directory) and Apache 2.0 License
 //  (found in the LICENSE.Apache file in the root directory).
 
-#ifndef ROCKSDB_LITE
 
 #include "utilities/transactions/transaction_util.h"
 
@@ -22,7 +21,8 @@ namespace ROCKSDB_NAMESPACE {
 Status TransactionUtil::CheckKeyForConflicts(
     DBImpl* db_impl, ColumnFamilyHandle* column_family, const std::string& key,
     SequenceNumber snap_seq, const std::string* const read_ts, bool cache_only,
-    ReadCallback* snap_checker, SequenceNumber min_uncommitted) {
+    ReadCallback* snap_checker, SequenceNumber min_uncommitted,
+    bool enable_udt_validation) {
   Status result;
 
   auto cfh = static_cast_with_check<ColumnFamilyHandleImpl>(column_family);
@@ -38,8 +38,9 @@ Status TransactionUtil::CheckKeyForConflicts(
     SequenceNumber earliest_seq =
         db_impl->GetEarliestMemTableSequenceNumber(sv, true);
 
-    result = CheckKey(db_impl, sv, earliest_seq, snap_seq, key, read_ts,
-                      cache_only, snap_checker, min_uncommitted);
+    result =
+        CheckKey(db_impl, sv, earliest_seq, snap_seq, key, read_ts, cache_only,
+                 snap_checker, min_uncommitted, enable_udt_validation);
 
     db_impl->ReturnAndCleanupSuperVersion(cfd, sv);
   }
@@ -53,7 +54,8 @@ Status TransactionUtil::CheckKey(DBImpl* db_impl, SuperVersion* sv,
                                  const std::string& key,
                                  const std::string* const read_ts,
                                  bool cache_only, ReadCallback* snap_checker,
-                                 SequenceNumber min_uncommitted) {
+                                 SequenceNumber min_uncommitted,
+                                 bool enable_udt_validation) {
   // When `min_uncommitted` is provided, keys are not always committed
   // in sequence number order, and `snap_checker` is used to check whether
   // specific sequence number is in the database is visible to the transaction.
@@ -79,7 +81,7 @@ Status TransactionUtil::CheckKey(DBImpl* db_impl, SuperVersion* sv,
       result = Status::TryAgain(
           "Transaction could not check for conflicts as the MemTable does not "
           "contain a long enough history to check write at SequenceNumber: ",
-          ToString(snap_seq));
+          std::to_string(snap_seq));
     }
   } else if (snap_seq < earliest_seq || min_uncommitted <= earliest_seq) {
     // Use <= for min_uncommitted since earliest_seq is actually the largest sec
@@ -131,7 +133,7 @@ Status TransactionUtil::CheckKey(DBImpl* db_impl, SuperVersion* sv,
                                 ? snap_seq < seq
                                 : !snap_checker->IsVisible(seq);
       // Perform conflict checking based on timestamp if applicable.
-      if (!write_conflict && read_ts != nullptr) {
+      if (enable_udt_validation && !write_conflict && read_ts != nullptr) {
         ColumnFamilyData* cfd = sv->cfd;
         assert(cfd);
         const Comparator* const ucmp = cfd->user_comparator();
@@ -164,7 +166,7 @@ Status TransactionUtil::CheckKeysForConflicts(DBImpl* db_impl,
     SuperVersion* sv = db_impl->GetAndRefSuperVersion(cf);
     if (sv == nullptr) {
       result = Status::InvalidArgument("Could not access column family " +
-                                       ToString(cf));
+                                       std::to_string(cf));
       break;
     }
 
@@ -203,4 +205,3 @@ Status TransactionUtil::CheckKeysForConflicts(DBImpl* db_impl,
 
 }  // namespace ROCKSDB_NAMESPACE
 
-#endif  // ROCKSDB_LITE

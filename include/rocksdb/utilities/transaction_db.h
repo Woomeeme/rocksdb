@@ -4,7 +4,6 @@
 //  (found in the LICENSE.Apache file in the root directory).
 
 #pragma once
-#ifndef ROCKSDB_LITE
 
 #include <string>
 #include <utility>
@@ -21,12 +20,13 @@
 
 namespace ROCKSDB_NAMESPACE {
 
+class SecondaryIndex;
 class TransactionDBMutexFactory;
 
 enum TxnDBWritePolicy {
   WRITE_COMMITTED = 0,  // write only the committed data
-  WRITE_PREPARED,  // write data after the prepare phase of 2pc
-  WRITE_UNPREPARED  // write data before the prepare phase of 2pc
+  WRITE_PREPARED,       // write data after the prepare phase of 2pc
+  WRITE_UNPREPARED      // write data before the prepare phase of 2pc
 };
 
 constexpr uint32_t kInitialMaxDeadlocks = 5;
@@ -136,7 +136,7 @@ class RangeLockManagerHandle : public LockManagerHandle {
   virtual std::vector<RangeDeadlockPath> GetRangeDeadlockInfoBuffer() = 0;
   virtual void SetRangeDeadlockInfoBufferSize(uint32_t target_size) = 0;
 
-  virtual ~RangeLockManagerHandle() {}
+  ~RangeLockManagerHandle() override {}
 };
 
 // A factory function to create a Range Lock Manager. The created object should
@@ -222,6 +222,33 @@ struct TransactionDBOptions {
   // pending writes into the database. A value of 0 or less means no limit.
   int64_t default_write_batch_flush_threshold = 0;
 
+  // This option is valid only for write-prepared/write-unprepared. Transaction
+  // will rely on this callback to determine if a key should be rolled back
+  // with Delete or SingleDelete when necessary. If the callback returns true,
+  // then SingleDelete should be used. If the callback is not callable or the
+  // callback returns false, then a Delete is used.
+  // The application should ensure thread-safety of this callback.
+  // The callback should not throw because RocksDB is not exception-safe.
+  // The callback may be removed if we allow mixing Delete and SingleDelete in
+  // the future.
+  std::function<bool(TransactionDB* /*db*/,
+                     ColumnFamilyHandle* /*column_family*/,
+                     const Slice& /*key*/)>
+      rollback_deletion_type_callback;
+
+  // A flag to control for the whole DB whether user-defined timestamp based
+  // validation are enabled when applicable. Only WriteCommittedTxn support
+  // user-defined timestamps so this option only applies in this case.
+  bool enable_udt_validation = true;
+
+  //       / \     UNDER CONSTRUCTION
+  //      / ! \    UNDER CONSTRUCTION
+  //     /-----\   UNDER CONSTRUCTION
+  //
+  // The secondary indices to be maintained. See the SecondaryIndex interface
+  // for more details.
+  std::vector<std::shared_ptr<SecondaryIndex>> secondary_indices;
+
  private:
   // 128 entries
   // Should the default value change, please also update wp_snapshot_cache_bits
@@ -305,6 +332,39 @@ struct TransactionOptions {
   // description. If a negative value is specified, then the default value from
   // TransactionDBOptions is used.
   int64_t write_batch_flush_threshold = -1;
+
+  // DO NOT USE.
+  // This is only a temporary option dedicated for MyRocks that will soon be
+  // removed.
+  // In normal use cases, meta info like column family's timestamp size is
+  // tracked at the transaction layer, so it's not necessary and even
+  // detrimental to track such info inside the internal WriteBatch because it
+  // may let anti-patterns like bypassing Transaction write APIs and directly
+  // write to its internal `WriteBatch` retrieved like this:
+  // https://github.com/facebook/mysql-5.6/blob/fb-mysql-8.0.32/storage/rocksdb/ha_rocksdb.cc#L4949-L4950
+  // Setting this option to true will keep aforementioned use case continue to
+  // work before it's refactored out.
+  // When this flag is enabled, we also intentionally only track the timestamp
+  // size in APIs that MyRocks currently are using, including Put, Merge, Delete
+  // DeleteRange, SingleDelete.
+  bool write_batch_track_timestamp_size = false;
+
+  // EXPERIMENTAL
+  // Only supports write-committed policy. If set to true, the transaction will
+  // skip memtable write and ingest into the DB directly during Commit(). This
+  // makes Commit() much faster for transactions with many operations.
+  // Transactions with Merge() or PutEntity() is not supported yet.
+  //
+  // Note that the transaction will be ingested as an immutable memtable for
+  // CFs it updates, and the current memtable will be switched to a new one.
+  // So ingesting many transactions in a short period of time may cause stall
+  // due to too many memtables.
+  // Note that the ingestion relies on the transaction's underlying index,
+  // (WriteBatchWithIndex), so updates that are added to the transaction
+  // without indexing (e.g. added directly to the transaction underlying
+  // write batch through Transaction::GetWriteBatch()->GetWriteBatch())
+  // are not supported. They will not be applied to the DB.
+  bool commit_bypass_memtable = false;
 };
 
 // The per-write optimizations that do not involve transactions. TransactionDB
@@ -377,8 +437,8 @@ class TransactionDB : public StackableDB {
   // WRITE_PREPARED or WRITE_UNPREPARED , `skip_duplicate_key_check` must
   // additionally be set.
   using StackableDB::DeleteRange;
-  virtual Status DeleteRange(const WriteOptions&, ColumnFamilyHandle*,
-                             const Slice&, const Slice&) override {
+  Status DeleteRange(const WriteOptions&, ColumnFamilyHandle*, const Slice&,
+                     const Slice&) override {
     return Status::NotSupported();
   }
   // Open a TransactionDB similar to DB::Open().
@@ -426,7 +486,10 @@ class TransactionDB : public StackableDB {
   //
   // If old_txn is not null, BeginTransaction will reuse this Transaction
   // handle instead of allocating a new one.  This is an optimization to avoid
-  // extra allocations when repeatedly creating transactions.
+  // extra allocations when repeatedly creating transactions. **Note that this
+  // may not free all the allocated memory by the previous transaction (see
+  // WriteBatch::Clear()). To ensure that all allocated memory is freed, users
+  // must destruct the transaction object.
   virtual Transaction* BeginTransaction(
       const WriteOptions& write_options,
       const TransactionOptions& txn_options = TransactionOptions(),
@@ -444,6 +507,42 @@ class TransactionDB : public StackableDB {
   virtual std::vector<DeadlockPath> GetDeadlockInfoBuffer() = 0;
   virtual void SetDeadlockInfoBufferSize(uint32_t target_size) = 0;
 
+  // Create a snapshot and assign ts to it. Return the snapshot to caller. The
+  // snapshot-timestamp mapping is also tracked by the database.
+  // Caller must ensure there are no active writes when this API is called.
+  virtual std::pair<Status, std::shared_ptr<const Snapshot>>
+  CreateTimestampedSnapshot(TxnTimestamp ts) = 0;
+
+  // Return the latest timestamped snapshot if present.
+  std::shared_ptr<const Snapshot> GetLatestTimestampedSnapshot() const {
+    return GetTimestampedSnapshot(kMaxTxnTimestamp);
+  }
+  // Return the snapshot correponding to given timestamp. If ts is
+  // kMaxTxnTimestamp, then we return the latest timestamped snapshot if
+  // present. Othersise, we return the snapshot whose timestamp is equal to
+  // `ts`. If no such snapshot exists, then we return null.
+  virtual std::shared_ptr<const Snapshot> GetTimestampedSnapshot(
+      TxnTimestamp ts) const = 0;
+  // Release timestamped snapshots whose timestamps are less than or equal to
+  // ts.
+  virtual void ReleaseTimestampedSnapshotsOlderThan(TxnTimestamp ts) = 0;
+
+  // Get all timestamped snapshots which will be stored in
+  // timestamped_snapshots.
+  Status GetAllTimestampedSnapshots(
+      std::vector<std::shared_ptr<const Snapshot>>& timestamped_snapshots)
+      const {
+    return GetTimestampedSnapshots(/*ts_lb=*/0, /*ts_ub=*/kMaxTxnTimestamp,
+                                   timestamped_snapshots);
+  }
+
+  // Get all timestamped snapshots whose timestamps fall within [ts_lb, ts_ub).
+  // timestamped_snapshots will be cleared and contain returned snapshots.
+  virtual Status GetTimestampedSnapshots(
+      TxnTimestamp ts_lb, TxnTimestamp ts_ub,
+      std::vector<std::shared_ptr<const Snapshot>>& timestamped_snapshots)
+      const = 0;
+
  protected:
   // To Create an TransactionDB, call Open()
   // The ownership of db is transferred to the base StackableDB
@@ -454,5 +553,3 @@ class TransactionDB : public StackableDB {
 };
 
 }  // namespace ROCKSDB_NAMESPACE
-
-#endif  // ROCKSDB_LITE

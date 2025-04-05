@@ -26,6 +26,7 @@ override_dh_auto_configure:
 	dh_auto_configure -O--buildsystem=cmake \
 		 -- \
 		 -DWITH_BZ2=ON \
+		 -DWITH_LZ4=ON \
 		 -DWITH_ZLIB=ON \
 		 -DWITH_ZSTD=ON \
 		 -DWITH_SNAPPY=ON \
@@ -34,7 +35,7 @@ override_dh_auto_configure:
 		 -DWITH_CORE_TOOLS=ON \
 		 -DWITH_TOOLS=ON \
 		 -DWITH_TESTS=ON \
-		 -DPORTABLE=ON \
+		 -DPORTABLE=1 \
 		 -DFAIL_ON_WARNINGS=OFF
 
 override_dh_auto_test:
